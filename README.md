@@ -14,3 +14,19 @@ run the main.py file and supply the proper flags
 | `-o`   | Supply output file (defaults are 'input.b' for assembling, 'sim_output.txt' for simulating) |
 ---
 >Running without `-a` will run a simulation
+
+### Supported operations
+-ADD
+-SUB
+-AND
+-OR
+-ADDI
+-LW
+-LH
+-SW
+-SH
+-SLL
+-SRL
+-NOP
+-J
+-Beq
