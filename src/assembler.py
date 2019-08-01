@@ -5,18 +5,19 @@ from data.instruction_table import ascii_to_bin as instruction_table
 from data.register_table import register_table
 
 
-__INSTR_MASK__ = '{:06b}{:05b}{:05b}{:05b}{:05b}{:06b}'
+__INSTR_MASK_1__ = '{:06b}{:05b}{:05b}{:05b}{:05b}{:06b}'
+__INSTR_MASK_2__ = '{:06b}{:05b}{:05b}{:05b}{}{:06b}'
+
+
 def d2b(A: int, w: int=5) -> int:
   if A < 0:
     res = (- A ^ ((1 << w) - 1)) + 1
-    res = '{:b}'.format(res)
-    print('{} | {} | {} | {}'.format(A, w, res, len(res)))
-    return res
-  else:
+    return '{:b}'.format(res)
+  elif A > 0:
     padding = '0'*(w - 1 - int(math.log(A, 2)))
-    res = '{}{:b}'.format(padding, A)
-    print('{} | {} | {} | {}'.format(A, w, res, len(res)))
-    return res
+    return '{}{:b}'.format(padding, A)
+  else:
+    return '0'*w
 
 
 def asm_to_bin(instr: str, instr_count: int, labels: dict) -> (int, [str]):
@@ -26,48 +27,67 @@ def asm_to_bin(instr: str, instr_count: int, labels: dict) -> (int, [str]):
   instr = instr.strip()
   cmd = instr.split(' ')[0]
   cmd_info = instruction_table[cmd]
-  if cmd in ('beq', 'j'):
+  if cmd == 'nop':
+    # Create nop instruction
+    instr_bin = '{:06b}{:026b}'.format(cmd_info[1], 0)
+    instr_out.append(instr_bin)
+  elif cmd in ('beq', 'j'):
     # Creating the branch/jump instruction
     label = instr.split(' ')[-1]
-    label_bin = labels[label] - (instr_count+2)
+    label_bin = labels[label] - (instr_count+1)
     if cmd == 'beq':
       # Get register
       registers = [register_table[x] for x in instr[instr.index(' '):].replace(' ','').split(',')[:-1]]
       assert len(registers) == 2, 'R-type instruction {} should have 2 registers'.format(cmd)
       bin_instr = '{:06b}{:05b}{:05b}{}'.format(cmd_info[1], registers[0], registers[1], d2b(label_bin, 16))
       instr_out.append(bin_instr)
-      instr_count += 1
     else:
       bin_instr = '{:06b}{:05b}{:05b}{}'.format(cmd_info[1], 0, 0, d2b(label_bin, 16))
       instr_out.append(bin_instr)
-      instr_count += 1
   elif cmd in ('sll', 'srl'):
     # Assembling with a shift instrucion
     # Getting the registers from the instructions
     registers = instr[instr.index(' '):].replace(' ','').split(',')[:-1]
-    shamt = instr.split(' ')[1].replace(' ','').split(',')[-1]
+    shamt = instr[instr.index(' '):].replace(' ','').split(',')[-1]
     assert len(registers) == 2, 'R-type instruction {} should have 2 registers'.format(cmd)
     # Creating binary instruction
-    bin_cmd = __INSTR_MASK__.format( cmd_info[1], 0, \
+    bin_cmd = __INSTR_MASK_2__.format( cmd_info[1], \
       register_table[registers[1]], 0, register_table[registers[0]],\
-        d2b(shamt) , cmd_info[2]\
+      d2b(int(shamt)) , cmd_info[2]\
     )
     # Adding the command to the output list
     instr_out.append(bin_cmd)
-    instr_count += 1
   elif cmd_info[0] == 'R':
     # R type command
     # Getting the registers from the instructions
     registers = instr[instr.index(' '):].replace(' ','').split(',')
     assert len(registers) == 3, 'R-type instruction {} should have 3 registers'.format(cmd)
     # Creating binary instruction
-    bin_cmd = __INSTR_MASK__.format( cmd_info[1], \
+    bin_cmd = __INSTR_MASK_1__.format( cmd_info[1], \
       register_table[registers[2]], register_table[registers[1]], \
       register_table[registers[0]], 0, cmd_info[2]\
     )
     # Adding the command to the output list
     instr_out.append(bin_cmd)
-    instr_count += 1
+  elif cmd in ('lw', 'lh', 'sw', 'sh'):
+    # Dealing with memory access instructions
+    # Create I-type instruction
+    # Getting the registers from the instructions
+    registers = instr[instr.index(' '):].replace(' ','').split(',')
+    # Getting shift amount from the second register
+    assert len(registers) == 2, 'I-type instruction {} should have 2 registers'.format(cmd)
+    shamt = registers[1].split('(')[0]
+    try:
+      shamt = int(shamt)
+    except Exception:
+      shamt = 0
+    registers[1] = registers[1].split('(')[1][:-1]
+    bin_cmd = __INSTR_MASK_2__.format(cmd_info[1], \
+      register_table[registers[1]], register_table[registers[0]], 0, d2b(shamt, 5), \
+      cmd_info[2]
+    ) 
+
+    instr_out.append(bin_cmd)
   elif cmd_info[0] == 'I':
     # Create I-type instruction
     # Getting the registers from the instructions
@@ -77,6 +97,7 @@ def asm_to_bin(instr: str, instr_count: int, labels: dict) -> (int, [str]):
     bin_cmd = '{:06b}{:05b}{:05b}{}'.format(cmd_info[1], \
       register_table[registers[1]], register_table[registers[0]], d2b(imm, 16))
     instr_out.append(bin_cmd)
+  instr_count += 1
   instr_out[-1] += '  # {}'.format(instr)
   return instr_count, instr_out
 
@@ -99,9 +120,9 @@ def assemble(input_stream: io.TextIOWrapper,
     # Checking for labels
     line = line.split(':')
     if len(line) == 1:
-          instr_count += 1
+      instr_count += 1
     elif len(line) == 2:
-      labels[line[0]] = instr_count-1
+      labels[line[0]] = instr_count
       if len(line[1]) > 0:
             instr_count += 1
   # Resetting instruction count

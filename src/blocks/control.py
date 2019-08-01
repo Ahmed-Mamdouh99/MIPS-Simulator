@@ -34,7 +34,11 @@ class Control:
     self.reset()
     op_info = op_to_ascii[opcode]
     op = op_info[0]
-    if op == 'arith':
+    if op in ('sll', 'srl'):
+      # trigger shift signals
+      self.reg_write = True
+      self.shamt = True
+    elif op == 'arith':
       # trigger r-type signals
       self.reg_dst = True
       self.reg_write = True
@@ -56,11 +60,6 @@ class Control:
         self.hw = True
       self.mem_write = True
       self.alu_src = True
-    elif op in ('sll', 'srl'):
-      # trigger shift signals
-      self.reg_dst = True
-      self.alu_src = True
-      self.reg_write = True
     elif op == 'beq':
       # trigger branch signals
       self.branch = True

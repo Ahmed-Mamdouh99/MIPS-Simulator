@@ -31,7 +31,7 @@ class Instruction:
   
   def __str__(self) -> str:
     return '{:06b} {:05b} {:05b} {:05b} {:05b} {:06b}'.format(self.opcode,\
-        self.rd, self.rt, self.sign_extend)
+        self.rs, self.rt, self.rd, self.shamt, self.funct)
 
 
 class Processor:
@@ -134,9 +134,9 @@ class Processor:
     """
     op1 = self.reg_file.read_data_1
     op2 = self.reg_file.read_data_2
-    if self.control.alu_src:
-      op2 = self.inst.sign_extend
-    self.alu.execute(self.inst.funct, self.control.alu_op, op1, op2)
+    imm = self.inst.sign_extend
+    self.alu.execute(self.inst.funct, self.control.alu_op, op1, op2, imm, \
+      self.control.alu_src)
 
   def access_memory(self) -> None:
     """ Accessing memory using the results from the ALU, registers and control signals

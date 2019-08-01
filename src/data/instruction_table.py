@@ -62,4 +62,4 @@ op_to_ascii[0] = ('arith', op_to_ascii[0][1], None)
 funct_to_ascii = dict()
 for key, val in ascii_to_bin.items():
   funct_to_ascii[val[2]] = (key, val[0], val[1])
-funct_to_ascii[0] = ('non_arith', op_to_ascii[0][1], None)
+funct_to_ascii[0] = ('sll', ascii_to_bin['sll'][0], ascii_to_bin['sll'][1])
