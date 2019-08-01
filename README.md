@@ -16,17 +16,17 @@ run the main.py file and supply the proper flags
 >Running without `-a` will run a simulation
 
 ### Supported operations
--ADD
--SUB
--AND
--OR
--ADDI
--LW
--LH
--SW
--SH
--SLL
--SRL
--NOP
--J
--Beq
+- ADD
+- SUB
+- AND
+- OR
+- ADDI
+- LW
+- LH
+- SW
+- SH
+- SLL
+- SRL
+- NOP
+- J
+- Beq
