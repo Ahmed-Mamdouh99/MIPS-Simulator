@@ -166,5 +166,3 @@ if __name__ == '__main__':
   # Read output file
   output_stream = open(output_name, 'w')
   assemble(input_stream, output_stream)
-
-int(23).bit_length
